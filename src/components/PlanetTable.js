@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 function PlanetTable() {
   const [name, setName] = useState([]);
+  const [nameFilter, setNameFilter] = useState('');
 
   useEffect(() => {
     fetch('https://swapi.dev/api/planets')
@@ -16,8 +17,24 @@ function PlanetTable() {
       });
   }, []);
 
+  const handleChange = (event) => {
+    setNameFilter(event.target.value);
+  };
+
+  const planetFilter = name
+    .filter((planet) => planet.name.toLowerCase()
+      .includes(nameFilter.toLowerCase()));
+
   return (
     <div>
+      <div>
+        <input
+          type="text"
+          name="name-filter"
+          data-testid="name-filter"
+          onChange={ handleChange }
+        />
+      </div>
       <table>
         <thead>
           <tr>
@@ -38,7 +55,7 @@ function PlanetTable() {
         </thead>
         <tbody>
           {
-            name.map(
+            planetFilter.map(
               (planet, index) => (
                 <tr key={ index }>
                   <td>{ planet.name }</td>
