@@ -30,22 +30,31 @@ function PlanetTable() {
   // Filtra por 2 select e 1 input, requisito 3
 
   const handleFilter = () => {
-    const filtered = name.filter((planet) => {
-      const columnValue = Number(planet[columnFilter]);
-      const filterValue = Number(valueFilter);
-      switch (comparisonFilter) {
-      case 'maior que':
-        return columnValue > filterValue;
-      case 'menor que':
-        return columnValue < filterValue;
-      case 'igual a':
-        return columnValue === filterValue;
-      default:
-        return planet;
-      }
-    });
+    const secondFilter = {
+      column: columnFilter,
+      comparation: comparisonFilter,
+      value: valueFilter,
+    };
 
-    setPlanetFiltered(filtered);
+    setPlanetFiltered([...planetFiltered, secondFilter]);
+
+    const filtered = name
+      .filter((planet) => [...planetFiltered, secondFilter]
+        .every((filter) => {
+          const columnValue = Number(planet[filter.column]);
+          const filterValue = Number(filter.value);
+
+          if (filter.comparation === 'maior que') {
+            return columnValue > filterValue;
+          } if (filter.comparation === 'menor que') {
+            return columnValue < filterValue;
+          } if (filter.comparation === 'igual a') {
+            return columnValue === filterValue;
+          }
+
+          return false;
+        }));
+    setName(filtered);
   };
 
   return (
@@ -115,7 +124,7 @@ function PlanetTable() {
         </thead>
         <tbody>
           {
-            (planetFiltered.length > 0 ? planetFiltered : planetFilter)
+            planetFilter
               .map((planet, index) => (
                 <tr key={ index }>
                   <td>{ planet.name }</td>
