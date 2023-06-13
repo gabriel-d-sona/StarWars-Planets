@@ -6,7 +6,7 @@ function PlanetTable() {
   const [columnFilter, setColumnFilter] = useState('population');
   const [comparisonFilter, setComparisonFilter] = useState('maior que');
   const [valueFilter, setValueFilter] = useState('0');
-  const [planetFiltered, setPlanetFiltered] = useState([]);
+  const [filters, setFilters] = useState([]);
 
   useEffect(() => {
     fetch('https://swapi.dev/api/planets')
@@ -17,44 +17,51 @@ function PlanetTable() {
           return res;
         });
         setName(dataResidentsDelete);
-        console.log(dataResidentsDelete);
       });
   }, []);
 
-  // Filtra por um input, requisito 2
+  const filterOptions = [
+    'population',
+    'orbital_period',
+    'diameter',
+    'rotation_period',
+    'surface_water',
+  ].filter((option) => !filters.some((filter) => filter.column === option));
 
-  const planetFilter = name
-    .filter((planet) => planet.name.toLowerCase()
-      .includes(nameFilter.toLowerCase()));
+  const filteredPlanets = name.filter((planet) => filters.every((filter) => {
+    const columnValue = Number(planet[filter.column]);
+    const filterValue = Number(filter.value);
 
-  // Filtra por 2 select e 1 input, requisito 3
+    if (filter.comparison === 'maior que') {
+      return columnValue > filterValue;
+    } if (filter.comparison === 'menor que') {
+      return columnValue < filterValue;
+    } if (filter.comparison === 'igual a') {
+      return columnValue === filterValue;
+    }
+
+    return false;
+  }));
 
   const handleFilter = () => {
-    const secondFilter = {
+    const newFilter = {
       column: columnFilter,
-      comparation: comparisonFilter,
+      comparison: comparisonFilter,
       value: valueFilter,
     };
 
-    setPlanetFiltered([...planetFiltered, secondFilter]);
+    setFilters([...filters, newFilter]);
+    setColumnFilter(filterOptions[0]);
+  };
 
-    const filtered = name
-      .filter((planet) => [...planetFiltered, secondFilter]
-        .every((filter) => {
-          const columnValue = Number(planet[filter.column]);
-          const filterValue = Number(filter.value);
+  const removeFilter = (index) => {
+    const updatedFilters = [...filters];
+    updatedFilters.splice(index, 1);
+    setFilters(updatedFilters);
+  };
 
-          if (filter.comparation === 'maior que') {
-            return columnValue > filterValue;
-          } if (filter.comparation === 'menor que') {
-            return columnValue < filterValue;
-          } if (filter.comparation === 'igual a') {
-            return columnValue === filterValue;
-          }
-
-          return false;
-        }));
-    setName(filtered);
+  const removeAllFilters = () => {
+    setFilters([]);
   };
 
   return (
@@ -74,11 +81,11 @@ function PlanetTable() {
           value={ columnFilter }
           onChange={ ({ target }) => setColumnFilter(target.value) }
         >
-          <option value="population">population</option>
-          <option value="orbital_period">orbital_period</option>
-          <option value="diameter">diameter</option>
-          <option value="rotation_period">rotation_period</option>
-          <option value="surface_water">surface_water</option>
+          {filterOptions.map((option) => (
+            <option key={ option } value={ option }>
+              {option}
+            </option>
+          ))}
         </select>
         <select
           data-testid="comparison-filter"
@@ -96,13 +103,33 @@ function PlanetTable() {
           value={ valueFilter }
           onChange={ ({ target }) => setValueFilter(target.value) }
         />
-        <button
-          type="button"
-          data-testid="button-filter"
-          onClick={ handleFilter }
-        >
+        <button type="button" data-testid="button-filter" onClick={ handleFilter }>
           Filtrar
         </button>
+        {filters.map((filter, index) => (
+          <div
+            data-testid="filter"
+            key={ index }
+          >
+            {`${filter.column} - ${filter.comparison} - ${filter.value}`}
+            <button
+              type="button"
+              onClick={ () => removeFilter(index) }
+            >
+              X
+
+            </button>
+          </div>
+        ))}
+        {filters.length > 0 && (
+          <button
+            type="button"
+            data-testid="button-remove-filters"
+            onClick={ removeAllFilters }
+          >
+            Remover todas filtragens
+          </button>
+        )}
       </form>
       <table>
         <thead>
@@ -123,26 +150,27 @@ function PlanetTable() {
           </tr>
         </thead>
         <tbody>
-          {
-            planetFilter
-              .map((planet, index) => (
-                <tr key={ index }>
-                  <td>{ planet.name }</td>
-                  <td>{planet.rotation_period}</td>
-                  <td>{planet.orbital_period}</td>
-                  <td>{planet.diameter}</td>
-                  <td>{planet.climate}</td>
-                  <td>{planet.gravity}</td>
-                  <td>{planet.terrain}</td>
-                  <td>{planet.surface_water}</td>
-                  <td>{planet.population}</td>
-                  <td>{planet.films}</td>
-                  <td>{planet.created}</td>
-                  <td>{planet.edited}</td>
-                  <td>{planet.url}</td>
-                </tr>
-              ))
-          }
+          {filteredPlanets
+            .filter((planet) => planet.name
+              .toLowerCase()
+              .includes(nameFilter.toLowerCase()))
+            .map((planet, index) => (
+              <tr key={ index }>
+                <td>{planet.name}</td>
+                <td>{planet.rotation_period}</td>
+                <td>{planet.orbital_period}</td>
+                <td>{planet.diameter}</td>
+                <td>{planet.climate}</td>
+                <td>{planet.gravity}</td>
+                <td>{planet.terrain}</td>
+                <td>{planet.surface_water}</td>
+                <td>{planet.population}</td>
+                <td>{planet.films}</td>
+                <td>{planet.created}</td>
+                <td>{planet.edited}</td>
+                <td>{planet.url}</td>
+              </tr>
+            ))}
         </tbody>
       </table>
     </div>
